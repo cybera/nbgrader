@@ -48,6 +48,7 @@ Manage Assignments
           available, the <code>course_id</code> option must be set in <code>nbgrader_config.py</code>.
           For details, see <a href="http://nbgrader.readthedocs.io/en/stable/configuration/config_options.html">the documentation</a>.</li>
           <li><i>(JupyterHub only)</i> To <b>collect</b> assignments, click the collect button.</li>
+          <li><i>(JupyterHub only)</i> To <b>collect all</b> assignments, click the collect_all button.</li>
           <li>To <b>autograde</b> submissions, click on the number of collected submissions. You must run
           the autograder on the submissions before you can manually grade them.</li>
         </ol>
@@ -88,17 +89,18 @@ for instructions.
   <th class="text-center no-sort">Preview</th>
   <th class="text-center no-sort">Release</th>
   <th class="text-center no-sort">Collect</th>
+  <th class="text-center no-sort">Collect All</th>
   <th class="text-center"># Submissions</th>
 </tr>
 {%- endblock -%}
 
 {%- block table_body -%}
-<tr><td colspan="9">Loading, please wait...</td></tr>
+<tr><td colspan="10">Loading, please wait...</td></tr>
 {%- endblock -%}
 
 {%- block table_footer -%}
 <tr>
-  <td colspan="9">
+  <td colspan="10">
     <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
     <a href="#" onClick="createAssignmentModal();">Add new assignment...</a>
   </td>

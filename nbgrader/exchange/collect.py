@@ -100,3 +100,65 @@ class ExchangeCollect(Exchange):
                     self.log.info("Submission already exists, use --update to update: {} {}".format(
                         student_id, self.coursedir.assignment_id
                     ))
+
+class ExchangeCollectAll(Exchange):
+
+    update = Bool(
+        False,
+        help="Collection all submissions ."
+    ).tag(config=True)
+   
+
+    def _path_to_record(self, path):
+        filename = os.path.split(path)[1]
+        # Only split twice on +, giving three components. This allows usernames with +.
+        filename_list = filename.rsplit('+', 2)
+        if len(filename_list) != 3:
+            self.fail("Invalid filename: {}".format(filename))
+        username = filename_list[0]
+        timestamp = parse_utc(filename_list[2])
+        return {'username': username, 'filename': filename, 'timestamp': timestamp}
+
+   
+    def init_src(self):
+        if self.course_id == '':
+            self.fail("No course id specified. Re-run with --course flag.")
+
+        self.course_path = os.path.join(self.root, self.course_id)
+        self.inbound_path = os.path.join(self.course_path, 'inbound')
+        if not os.path.isdir(self.inbound_path):
+            self.fail("Course not found: {}".format(self.inbound_path))
+        if not check_mode(self.inbound_path, read=True, execute=True):
+            self.fail("You don't have read permissions for the directory: {}".format(self.inbound_path))
+        student_id = self.coursedir.student_id if self.coursedir.student_id else '*'
+        pattern = os.path.join(self.inbound_path, '{}+{}+*'.format(student_id, self.coursedir.assignment_id))
+        records = [self._path_to_record(f) for f in glob.glob(pattern)]
+        self.src_records=records
+
+    def init_dest(self):
+        pass
+
+    def copy_files(self):
+        if len(self.src_records) == 0:
+            self.log.warning("No submissions of '{}' for course '{}' to collect".format(
+                self.coursedir.assignment_id,
+                self.course_id))
+        else:
+           no_submissions=True
+           for rec in self.src_records:
+               student_id = rec['username']
+               timest=rec['timestamp']
+               submitted_time=timest.strftime("%Y_%m_%d_%H_%M_%S")
+               src_path = os.path.join(self.inbound_path, rec['filename'])
+               dest_path = self.coursedir.format_path("submitted_history",self.coursedir.assignment_id,student_id+"_"+submitted_time)
+               if not os.path.exists(os.path.dirname(dest_path)):
+                   os.makedirs(os.path.dirname(dest_path))
+               if not os.path.exists(dest_path):
+                   self.log.info("Copying  submission from student: '{}' timestamp: '{}' to '{}'".format(
+                       student_id,
+                       timest,
+                       os.path.dirname(dest_path)))
+                   no_submissions=False
+                   self.do_copy(src_path, dest_path)
+           if no_submissions:
+                  self.log.info("All submissions are already copied")

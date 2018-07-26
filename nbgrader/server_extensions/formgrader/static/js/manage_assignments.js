@@ -26,6 +26,7 @@ var AssignmentUI = Backbone.View.extend({
         this.$preview = this.$el.find(".preview");
         this.$release = this.$el.find(".release");
         this.$collect = this.$el.find(".collect");
+        this.$collect_all = this.$el.find(".collect_all");
         this.$num_submissions = this.$el.find(".num-submissions");
 
         this.listenTo(this.model, "change", this.render);
@@ -85,6 +86,7 @@ var AssignmentUI = Backbone.View.extend({
         this.$preview.empty();
         this.$release.empty();
         this.$collect.empty();
+        this.$collect_all.empty();
         this.$num_submissions.empty();
     },
 
@@ -176,6 +178,16 @@ var AssignmentUI = Backbone.View.extend({
                         .addClass("glyphicon glyphicon-cloud-download")
                         .attr("aria-hidden", "true")));
             }
+        }
+       
+        // collect_all
+        if (release_path && releaseable) {
+             this.$collect_all.append($("<a/>")
+                 .attr("href", "#")
+                 .click(_.bind(this.collect_all, this))
+                 .append($("<span/>")
+                     .addClass("glyphicon glyphicon-cloud-download")
+                     .attr("aria-hidden", "true")));
         }
 
         // number of submissions
@@ -334,6 +346,42 @@ var AssignmentUI = Backbone.View.extend({
             "There was an error collecting submissions of '" + this.model.get("name") + "'.");
     },
 
+    collect_all: function () {
+        this.clear();
+        this.$name.text("Please wait...");
+        $.post(base_url + "/formgrader/api/assignment/" + this.model.get("name") + "/collect_all")
+            .done(_.bind(this.collect_all_success, this))
+            .fail(_.bind(this.collect_all_failure, this));
+    },
+
+    collect_all_success: function (response) {
+        this.model.fetch();
+        response = JSON.parse(response);
+        if (response["success"]) {
+            createLogModal(
+                "success-modal",
+                "Success",
+                "Successfully collected all submissions of '" + this.model.get("name") + "'.",
+                response["log"]);
+
+        } else {
+            createLogModal(
+                "error-modal",
+                "Error",
+                "There was an error collecting '" + this.model.get("name") + "':",
+                response["log"],
+                response["error"]);
+        }
+    },
+
+    collect_all_failure: function () {
+        this.model.fetch();
+        createModal(
+            "error-modal",
+            "Error",
+            "There was an error collecting submissions of '" + this.model.get("name") + "'.");
+    },
+
     save: function () {
         var duedate = this.$modal_duedate.val();
         var timezone = this.$modal_timezone.val();
@@ -373,6 +421,7 @@ var insertRow = function (table) {
     row.append($("<td/>").addClass("text-center preview"));
     row.append($("<td/>").addClass("text-center release"));
     row.append($("<td/>").addClass("text-center collect"));
+    row.append($("<td/>").addClass("text-center collect_all"));
     row.append($("<td/>").addClass("text-center num-submissions"));
     table.append(row)
     return row;

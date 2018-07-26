@@ -238,6 +238,11 @@ class CollectHandler(BaseApiHandler):
     def post(self, assignment_id):
         self.write(json.dumps(self.api.collect(assignment_id)))
 
+class CollectAllHandler(BaseApiHandler):
+    @web.authenticated
+    @check_xsrf
+    def post(self, assignment_id):
+        self.write(json.dumps(self.api.collect_all(assignment_id)))
 
 class AutogradeHandler(BaseApiHandler):
     @web.authenticated
@@ -253,6 +258,7 @@ default_handlers = [
     (r"/formgrader/api/assignment/([^/]+)/unrelease", UnReleaseHandler),
     (r"/formgrader/api/assignment/([^/]+)/release", ReleaseHandler),
     (r"/formgrader/api/assignment/([^/]+)/collect", CollectHandler),
+    (r"/formgrader/api/assignment/([^/]+)/collect_all", CollectAllHandler),
 
     (r"/formgrader/api/notebooks/([^/]+)", NotebookCollectionHandler),
 
